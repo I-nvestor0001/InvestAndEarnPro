@@ -1,569 +1,601 @@
-import React, { useState, useEffect } from 'react';
-import { Users, TrendingUp, Wallet, LogOut, Trash2, DollarSign } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvestAndEarnPro - Invest and Earn High Returns</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
 
-const InvestAndEarnPro = () => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [withdrawals, setWithdrawals] = useState([]);
-  const [companyAccount, setCompanyAccount] = useState('0x1234...5678');
-  const [showRegister, setShowRegister] = useState(false);
-  const [greeting, setGreeting] = useState('');
-  const [formData, setFormData] = useState({});
-  const [errors, setErrors] = useState({});
-
-  const plans = [
-    { amount: 3000, return: 30000, days: 28, color: 'from-green-400 to-emerald-600' },
-    { amount: 10000, return: 100000, days: 28, color: 'from-blue-400 to-cyan-600' },
-    { amount: 25000, return: 250000, days: 28, color: 'from-purple-400 to-pink-600' },
-    { amount: 50000, return: 500000, days: 28, color: 'from-orange-400 to-red-600' },
-    { amount: 100000, return: 1000000, days: 28, color: 'from-indigo-400 to-violet-600' }
-  ];
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    if (currentUser) {
-      const hour = new Date().getHours();
-      let greet = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
-      setGreeting(`${greet}, ${currentUser.name}!`);
-    }
-  }, [currentUser]);
-
-  const loadData = async () => {
-    try {
-      const usersData = await window.storage.get('iep_users_v3', true);
-      if (usersData) {
-        setUsers(JSON.parse(usersData.value));
-      } else {
-        const initialUsers = [{ 
-          id: 'admin', 
-          email: 'admin@investandearnpro.com', 
-          password: 'admin123', 
-          name: 'Admin',
-          phone: '+2348000000000',
-          isAdmin: true,
-          balance: 0,
-          referrals: 0,
-          investments: [],
-          createdAt: new Date().toISOString()
-        }];
-        setUsers(initialUsers);
-        await window.storage.set('iep_users_v3', JSON.stringify(initialUsers), true);
-      }
-      
-      const withdrawalsData = await window.storage.get('iep_withdrawals_v3', true);
-      if (withdrawalsData) {
-        setWithdrawals(JSON.parse(withdrawalsData.value));
-      }
-      
-      const accountData = await window.storage.get('iep_company_account_v3', true);
-      if (accountData) {
-        setCompanyAccount(accountData.value);
-      }
-    } catch (error) {
-      const initialUsers = [{ 
-        id: 'admin', 
-        email: 'admin@investandearnpro.com', 
-        password: 'admin123', 
-        name: 'Admin',
-        phone: '+2348000000000',
-        isAdmin: true,
-        balance: 0,
-        referrals: 0,
-        investments: [],
-        createdAt: new Date().toISOString()
-      }];
-      setUsers(initialUsers);
-    }
-  };
-
-  const saveData = async () => {
-    try {
-      await window.storage.set('iep_users_v3', JSON.stringify(users), true);
-      await window.storage.set('iep_withdrawals_v3', JSON.stringify(withdrawals), true);
-      await window.storage.set('iep_company_account_v3', companyAccount, true);
-    } catch (error) {
-      console.error('Error saving:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (users.length > 0) {
-      saveData();
-    }
-  }, [users, withdrawals, companyAccount]);
-
-  const validateEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
-  const validatePhone = (phone) => {
-    return /^(\+234|0)[789][01]\d{8}$/.test(phone.replace(/\s/g, ''));
-  };
-
-  const handleRegister = async () => {
-    const newErrors = {};
-    
-    if (!formData.regName || formData.regName.trim().length < 3) {
-      newErrors.name = 'Name must be at least 3 characters';
-    }
-    
-    if (!formData.regEmail || !validateEmail(formData.regEmail)) {
-      newErrors.email = 'Please enter a valid email';
-    } else if (users.some(u => u.email.toLowerCase() === formData.regEmail.toLowerCase().trim())) {
-      newErrors.email = 'Email already registered';
-    }
-    
-    if (!formData.regPhone || !validatePhone(formData.regPhone)) {
-      newErrors.phone = 'Enter valid Nigerian number (08012345678)';
-    } else if (users.some(u => u.phone === formData.regPhone.trim())) {
-      newErrors.phone = 'Phone already registered';
-    }
-    
-    if (!formData.regPassword || formData.regPassword.length < 6) {
-      newErrors.password = 'Password must be 6+ characters';
-    }
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    const newUser = {
-      id: Date.now().toString(),
-      email: formData.regEmail.toLowerCase().trim(),
-      phone: formData.regPhone.trim(),
-      password: formData.regPassword,
-      name: formData.regName.trim(),
-      referredBy: formData.referral?.trim(),
-      isAdmin: false,
-      balance: 0,
-      referrals: 0,
-      investments: [],
-      createdAt: new Date().toISOString()
-    };
-
-    setUsers([...users, newUser]);
-    setCurrentUser(newUser);
-    setShowRegister(false);
-    setFormData({});
-    setErrors({});
-    alert('Registration successful!');
-  };
-
-  const handleLogin = () => {
-    if (!formData.loginEmail || !formData.loginPassword) {
-      setErrors({ loginEmail: 'Enter email and password' });
-      return;
-    }
-    
-    const user = users.find(u => 
-      u.email.toLowerCase() === formData.loginEmail.toLowerCase().trim() && 
-      u.password === formData.loginPassword
-    );
-    
-    if (user) {
-      setCurrentUser(user);
-      setFormData({});
-      setErrors({});
-    } else {
-      setErrors({ loginEmail: 'Invalid credentials' });
-    }
-  };
-
-  const handleInvest = (plan) => {
-    if (!currentUser || currentUser.isAdmin) return;
-    
-    const updatedUsers = users.map(user => {
-      if (user.id === currentUser.id) {
-        return {
-          ...user,
-          investments: [...user.investments, {
-            plan,
-            date: new Date().toISOString(),
-            maturityDate: new Date(Date.now() + plan.days * 24 * 60 * 60 * 1000).toISOString()
-          }]
+    <script>
+        // Storage utility
+        const storage = {
+            save: (key, data) => localStorage.setItem(key, JSON.stringify(data)),
+            get: (key) => {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : null;
+            }
         };
-      }
-      if (user.id === currentUser.referredBy) {
-        return { ...user, balance: user.balance + 1200, referrals: user.referrals + 1 };
-      }
-      return user;
-    });
-    
-    setUsers(updatedUsers);
-    setCurrentUser(updatedUsers.find(u => u.id === currentUser.id));
-    alert(`Investment successful! N${plan.amount.toLocaleString()} -> N${plan.return.toLocaleString()} in ${plan.days} days`);
-  };
 
-  const handleWithdraw = () => {
-    const amount = parseFloat(formData.withdrawAmount);
-    const account = formData.withdrawAccount;
-    
-    if (!amount || amount <= 0 || !account || account.length < 10) {
-      alert('Enter valid amount and account');
-      return;
-    }
-    
-    if (amount > currentUser.balance) {
-      alert('Insufficient balance');
-      return;
-    }
-    
-    const withdrawal = {
-      id: Date.now().toString(),
-      userId: currentUser.id,
-      userName: currentUser.name,
-      userEmail: currentUser.email,
-      userPhone: currentUser.phone,
-      amount,
-      account,
-      date: new Date().toISOString(),
-      status: 'pending'
-    };
-    
-    setWithdrawals([...withdrawals, withdrawal]);
-    setUsers(users.map(u => u.id === currentUser.id ? { ...u, balance: u.balance - amount } : u));
-    setCurrentUser({...currentUser, balance: currentUser.balance - amount});
-    setFormData({});
-    alert('Withdrawal requested!');
-  };
+        // App State
+        let state = {
+            currentUser: null,
+            users: storage.get('iep_users') || [{
+                id: 'admin',
+                email: 'admin@investandearnpro.com',
+                password: 'admin123',
+                name: 'Admin',
+                phone: '+2348000000000',
+                isAdmin: true,
+                balance: 0,
+                referrals: 0,
+                investments: [],
+                createdAt: new Date().toISOString()
+            }],
+            withdrawals: storage.get('iep_withdrawals') || [],
+            companyAccount: storage.get('iep_company_account') || '0x1234...5678',
+            showRegister: false,
+            formData: {},
+            errors: {}
+        };
 
-  const deleteUser = (userId) => {
-    if (window.confirm('Delete this user?')) {
-      setUsers(users.filter(u => u.id !== userId));
-    }
-  };
+        const plans = [
+            { amount: 3000, return: 30000, days: 28, color: 'from-green-400 to-emerald-600' },
+            { amount: 10000, return: 100000, days: 28, color: 'from-blue-400 to-cyan-600' },
+            { amount: 25000, return: 250000, days: 28, color: 'from-purple-400 to-pink-600' },
+            { amount: 50000, return: 500000, days: 28, color: 'from-orange-400 to-red-600' },
+            { amount: 100000, return: 1000000, days: 28, color: 'from-indigo-400 to-violet-600' }
+        ];
 
-  const updateCompanyAccount = () => {
-    if (formData.newAccount) {
-      setCompanyAccount(formData.newAccount);
-      setFormData({});
-      alert('Account updated!');
-    }
-  };
+        // Validation
+        const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        const validatePhone = (phone) => /^(\+234|0)[789][01]\d{8}$/.test(phone.replace(/\s/g, ''));
 
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
-              InvestAndEarnPro
-            </h1>
-            <p className="text-gray-600 mt-2">Join 1,000,000+ investors</p>
-          </div>
+        // Actions
+        function saveState() {
+            storage.save('iep_users', state.users);
+            storage.save('iep_withdrawals', state.withdrawals);
+            storage.save('iep_company_account', state.companyAccount);
+        }
 
-          {!showRegister ? (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
-                <input 
-                  value={formData.loginEmail || ''}
-                  onChange={(e) => setFormData({...formData, loginEmail: e.target.value})}
-                  type="email" 
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
-                  placeholder="your@email.com"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Password</label>
-                <input 
-                  value={formData.loginPassword || ''}
-                  onChange={(e) => setFormData({...formData, loginPassword: e.target.value})}
-                  type="password" 
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
-                  placeholder="Password"
-                />
-              </div>
-              {errors.loginEmail && <p className="text-red-500 text-sm">{errors.loginEmail}</p>}
-              <button onClick={handleLogin} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-semibold">
-                Login
-              </button>
-              <button onClick={() => setShowRegister(true)} className="w-full text-blue-600 text-sm">
-                Register Now
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Full Name</label>
-                <input 
-                  value={formData.regName || ''}
-                  onChange={(e) => setFormData({...formData, regName: e.target.value})}
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
-                  placeholder="John Doe"
-                />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
-                <input 
-                  value={formData.regEmail || ''}
-                  onChange={(e) => setFormData({...formData, regEmail: e.target.value})}
-                  type="email"
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
-                  placeholder="john@example.com"
-                />
-                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Phone</label>
-                <input 
-                  value={formData.regPhone || ''}
-                  onChange={(e) => setFormData({...formData, regPhone: e.target.value})}
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
-                  placeholder="08012345678"
-                />
-                {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Password</label>
-                <input 
-                  value={formData.regPassword || ''}
-                  onChange={(e) => setFormData({...formData, regPassword: e.target.value})}
-                  type="password"
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
-                  placeholder="Min 6 characters"
-                />
-                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Referral Code</label>
-                <input 
-                  value={formData.referral || ''}
-                  onChange={(e) => setFormData({...formData, referral: e.target.value})}
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
-                  placeholder="Optional"
-                />
-              </div>
-              <button onClick={handleRegister} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-semibold">
-                Register
-              </button>
-              <button onClick={() => setShowRegister(false)} className="w-full text-blue-600 text-sm">
-                Back to Login
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+        function handleRegister() {
+            const { regName, regEmail, regPhone, regPassword, referral } = state.formData;
+            const errors = {};
 
-  if (currentUser.isAdmin) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <nav className="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4">
-          <div className="max-w-7xl mx-auto flex justify-between items-center">
-            <h1 className="text-xl md:text-2xl font-bold">Admin Dashboard</h1>
-            <button onClick={() => setCurrentUser(null)} className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg">
-              <LogOut size={20} /> Logout
-            </button>
-          </div>
-        </nav>
+            if (!regName || regName.trim().length < 3) errors.name = 'Name must be at least 3 characters';
+            if (!regEmail || !validateEmail(regEmail)) errors.email = 'Please enter a valid email';
+            else if (state.users.some(u => u.email.toLowerCase() === regEmail.toLowerCase().trim())) {
+                errors.email = 'Email already registered';
+            }
+            if (!regPhone || !validatePhone(regPhone)) errors.phone = 'Enter valid Nigerian number (08012345678)';
+            else if (state.users.some(u => u.phone === regPhone.trim())) {
+                errors.phone = 'Phone already registered';
+            }
+            if (!regPassword || regPassword.length < 6) errors.password = 'Password must be 6+ characters';
 
-        <div className="max-w-7xl mx-auto p-4 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-2xl">
-              <Users size={40} />
-              <p className="text-sm mt-2">Total Users</p>
-              <p className="text-3xl font-bold">{users.filter(u => !u.isAdmin).length}</p>
-            </div>
-            <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-2xl">
-              <TrendingUp size={40} />
-              <p className="text-sm mt-2">Pending Withdrawals</p>
-              <p className="text-3xl font-bold">{withdrawals.length}</p>
-            </div>
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-2xl">
-              <Wallet size={40} />
-              <p className="text-sm mt-2">Total Investments</p>
-              <p className="text-3xl font-bold">{users.reduce((s, u) => s + u.investments.length, 0)}</p>
-            </div>
-          </div>
+            if (Object.keys(errors).length > 0) {
+                state.errors = errors;
+                render();
+                return;
+            }
 
-          <div className="bg-white rounded-2xl shadow p-6">
-            <h2 className="text-xl font-bold mb-4">Company Account</h2>
-            <div className="flex gap-2">
-              <input 
-                value={formData.newAccount !== undefined ? formData.newAccount : companyAccount}
-                onChange={(e) => setFormData({...formData, newAccount: e.target.value})}
-                className="flex-1 px-4 py-2 border rounded-lg"
-              />
-              <button onClick={updateCompanyAccount} className="bg-blue-600 text-white px-6 py-2 rounded-lg">
-                Update
-              </button>
-            </div>
-          </div>
+            const newUser = {
+                id: Date.now().toString(),
+                email: regEmail.toLowerCase().trim(),
+                phone: regPhone.trim(),
+                password: regPassword,
+                name: regName.trim(),
+                referredBy: referral?.trim(),
+                isAdmin: false,
+                balance: 0,
+                referrals: 0,
+                investments: [],
+                createdAt: new Date().toISOString()
+            };
 
-          <div className="bg-white rounded-2xl shadow p-6">
-            <h2 className="text-xl font-bold mb-4">Withdrawals</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3">User</th>
-                    <th className="text-left p-3">Contact</th>
-                    <th className="text-left p-3">Amount</th>
-                    <th className="text-left p-3">Account</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {withdrawals.map(w => (
-                    <tr key={w.id} className="border-b">
-                      <td className="p-3">{w.userName}</td>
-                      <td className="p-3 text-sm">{w.userEmail}<br/>{w.userPhone}</td>
-                      <td className="p-3 font-bold">N{w.amount.toLocaleString()}</td>
-                      <td className="p-3">{w.account}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+            state.users.push(newUser);
+            state.currentUser = newUser;
+            state.showRegister = false;
+            state.formData = {};
+            state.errors = {};
+            saveState();
+            alert('Registration successful!');
+            render();
+        }
 
-          <div className="bg-white rounded-2xl shadow p-6">
-            <h2 className="text-xl font-bold mb-4">All Users</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3">Name</th>
-                    <th className="text-left p-3">Email</th>
-                    <th className="text-left p-3">Phone</th>
-                    <th className="text-left p-3">Balance</th>
-                    <th className="text-left p-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.filter(u => !u.isAdmin).map(u => (
-                    <tr key={u.id} className="border-b">
-                      <td className="p-3">{u.name}</td>
-                      <td className="p-3">{u.email}</td>
-                      <td className="p-3">{u.phone}</td>
-                      <td className="p-3 font-bold">N{u.balance.toLocaleString()}</td>
-                      <td className="p-3">
-                        <button onClick={() => deleteUser(u.id)} className="text-red-600">
-                          <Trash2 size={20} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+        function handleLogin() {
+            const { loginEmail, loginPassword } = state.formData;
+            if (!loginEmail || !loginPassword) {
+                state.errors = { loginEmail: 'Enter email and password' };
+                render();
+                return;
+            }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <nav className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white p-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1 className="text-xl md:text-2xl font-bold">InvestAndEarnPro</h1>
-          <button onClick={() => setCurrentUser(null)} className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-xl">
-            <LogOut size={20} /> Logout
-          </button>
-        </div>
-      </nav>
+            const user = state.users.find(u =>
+                u.email.toLowerCase() === loginEmail.toLowerCase().trim() &&
+                u.password === loginPassword
+            );
 
-      <div className="max-w-7xl mx-auto p-4 space-y-6">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 rounded-3xl">
-          <h2 className="text-3xl font-bold">{greeting}</h2>
-          <p className="mt-2">Your financial freedom starts here</p>
-        </div>
+            if (user) {
+                state.currentUser = user;
+                state.formData = {};
+                state.errors = {};
+                render();
+            } else {
+                state.errors = { loginEmail: 'Invalid credentials' };
+                render();
+            }
+        }
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gradient-to-br from-green-400 to-emerald-600 text-white p-6 rounded-2xl">
-            <Wallet size={40} />
-            <p className="text-sm mt-2">Balance</p>
-            <p className="text-3xl font-bold">N{currentUser.balance.toLocaleString()}</p>
-          </div>
-          <div className="bg-gradient-to-br from-blue-400 to-cyan-600 text-white p-6 rounded-2xl">
-            <TrendingUp size={40} />
-            <p className="text-sm mt-2">Investments</p>
-            <p className="text-3xl font-bold">{currentUser.investments.length}</p>
-          </div>
-          <div className="bg-gradient-to-br from-purple-400 to-pink-600 text-white p-6 rounded-2xl">
-            <Users size={40} />
-            <p className="text-sm mt-2">Referrals</p>
-            <p className="text-3xl font-bold">{currentUser.referrals}</p>
-          </div>
-        </div>
+        function handleInvest(plan) {
+            if (!state.currentUser || state.currentUser.isAdmin) return;
 
-        <div className="bg-white rounded-3xl shadow-xl p-6">
-          <h2 className="text-2xl font-bold mb-6">Investment Plans</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {plans.map((plan, i) => (
-              <div key={i} className="border-2 rounded-2xl p-6 hover:shadow-xl transition">
-                <div className={`bg-gradient-to-br ${plan.color} text-white rounded-xl p-4 mb-4 text-center`}>
-                  <DollarSign className="mx-auto" size={40} />
-                  <p className="text-3xl font-bold mt-2">N{plan.amount.toLocaleString()}</p>
+            state.users = state.users.map(user => {
+                if (user.id === state.currentUser.id) {
+                    return {
+                        ...user,
+                        investments: [...user.investments, {
+                            plan,
+                            date: new Date().toISOString(),
+                            maturityDate: new Date(Date.now() + plan.days * 24 * 60 * 60 * 1000).toISOString()
+                        }]
+                    };
+                }
+                if (user.id === state.currentUser.referredBy) {
+                    return { ...user, balance: user.balance + 1200, referrals: user.referrals + 1 };
+                }
+                return user;
+            });
+
+            state.currentUser = state.users.find(u => u.id === state.currentUser.id);
+            saveState();
+            alert(`Investment successful! ₦${plan.amount.toLocaleString()} → ₦${plan.return.toLocaleString()} in ${plan.days} days`);
+            render();
+        }
+
+        function handleWithdraw() {
+            const amount = parseFloat(state.formData.withdrawAmount);
+            const account = state.formData.withdrawAccount;
+
+            if (!amount || amount <= 0 || !account || account.length < 10) {
+                alert('Enter valid amount and account');
+                return;
+            }
+
+            if (amount > state.currentUser.balance) {
+                alert('Insufficient balance');
+                return;
+            }
+
+            const withdrawal = {
+                id: Date.now().toString(),
+                userId: state.currentUser.id,
+                userName: state.currentUser.name,
+                userEmail: state.currentUser.email,
+                userPhone: state.currentUser.phone,
+                amount,
+                account,
+                date: new Date().toISOString(),
+                status: 'pending'
+            };
+
+            state.withdrawals.push(withdrawal);
+            state.users = state.users.map(u =>
+                u.id === state.currentUser.id ? { ...u, balance: u.balance - amount } : u
+            );
+            state.currentUser = { ...state.currentUser, balance: state.currentUser.balance - amount };
+            state.formData = {};
+            saveState();
+            alert('Withdrawal requested!');
+            render();
+        }
+
+        function deleteUser(userId) {
+            if (confirm('Delete this user?')) {
+                state.users = state.users.filter(u => u.id !== userId);
+                saveState();
+                render();
+            }
+        }
+
+        function updateCompanyAccount() {
+            if (state.formData.newAccount) {
+                state.companyAccount = state.formData.newAccount;
+                state.formData = {};
+                saveState();
+                alert('Account updated!');
+                render();
+            }
+        }
+
+        function logout() {
+            state.currentUser = null;
+            state.formData = {};
+            state.errors = {};
+            render();
+        }
+
+        // Render functions
+        function renderLoginPage() {
+            return `
+                <div class="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
+                        <div class="text-center mb-8">
+                            <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
+                                InvestAndEarnPro
+                            </h1>
+                            <p class="text-gray-600 mt-2">Join 1,000,000+ investors</p>
+                        </div>
+
+                        ${!state.showRegister ? `
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Email</label>
+                                    <input 
+                                        id="loginEmail"
+                                        type="email" 
+                                        class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
+                                        placeholder="your@email.com"
+                                        value="${state.formData.loginEmail || ''}"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Password</label>
+                                    <input 
+                                        id="loginPassword"
+                                        type="password" 
+                                        class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Password"
+                                        value="${state.formData.loginPassword || ''}"
+                                    />
+                                </div>
+                                ${state.errors.loginEmail ? `<p class="text-red-500 text-sm">${state.errors.loginEmail}</p>` : ''}
+                                <button onclick="handleLogin()" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:opacity-90">
+                                    Login
+                                </button>
+                                <button onclick="state.showRegister = true; render();" class="w-full text-blue-600 text-sm hover:underline">
+                                    Register Now
+                                </button>
+                            </div>
+                        ` : `
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Full Name</label>
+                                    <input 
+                                        id="regName"
+                                        class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
+                                        placeholder="John Doe"
+                                        value="${state.formData.regName || ''}"
+                                    />
+                                    ${state.errors.name ? `<p class="text-red-500 text-xs mt-1">${state.errors.name}</p>` : ''}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Email</label>
+                                    <input 
+                                        id="regEmail"
+                                        type="email"
+                                        class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
+                                        placeholder="john@example.com"
+                                        value="${state.formData.regEmail || ''}"
+                                    />
+                                    ${state.errors.email ? `<p class="text-red-500 text-xs mt-1">${state.errors.email}</p>` : ''}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Phone</label>
+                                    <input 
+                                        id="regPhone"
+                                        class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
+                                        placeholder="08012345678"
+                                        value="${state.formData.regPhone || ''}"
+                                    />
+                                    ${state.errors.phone ? `<p class="text-red-500 text-xs mt-1">${state.errors.phone}</p>` : ''}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Password</label>
+                                    <input 
+                                        id="regPassword"
+                                        type="password"
+                                        class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Min 6 characters"
+                                        value="${state.formData.regPassword || ''}"
+                                    />
+                                    ${state.errors.password ? `<p class="text-red-500 text-xs mt-1">${state.errors.password}</p>` : ''}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Referral Code (Optional)</label>
+                                    <input 
+                                        id="referral"
+                                        class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Optional"
+                                        value="${state.formData.referral || ''}"
+                                    />
+                                </div>
+                                <button onclick="handleRegister()" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-semibold hover:opacity-90">
+                                    Register
+                                </button>
+                                <button onclick="state.showRegister = false; state.errors = {}; render();" class="w-full text-blue-600 text-sm hover:underline">
+                                    Back to Login
+                                </button>
+                            </div>
+                        `}
+                    </div>
                 </div>
-                <div className="space-y-2 mb-4">
-                  <p>Returns: <span className="font-bold text-green-600">N{plan.return.toLocaleString()}</span></p>
-                  <p>Duration: <span className="font-bold">{plan.days} days</span></p>
-                  <p>ROI: <span className="font-bold text-purple-600">{((plan.return / plan.amount - 1) * 100).toFixed(0)}%</span></p>
+            `;
+        }
+
+        function renderAdminDashboard() {
+            const regularUsers = state.users.filter(u => !u.isAdmin);
+            return `
+                <div class="min-h-screen bg-gray-50">
+                    <nav class="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4">
+                        <div class="max-w-7xl mx-auto flex justify-between items-center">
+                            <h1 class="text-xl md:text-2xl font-bold">⚡ Admin Dashboard</h1>
+                            <button onclick="logout()" class="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30">
+                                Logout
+                            </button>
+                        </div>
+                    </nav>
+
+                    <div class="max-w-7xl mx-auto p-4 space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-2xl">
+                                <p class="text-sm">Total Users</p>
+                                <p class="text-4xl font-bold">${regularUsers.length}</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-2xl">
+                                <p class="text-sm">Pending Withdrawals</p>
+                                <p class="text-4xl font-bold">${state.withdrawals.length}</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-2xl">
+                                <p class="text-sm">Total Investments</p>
+                                <p class="text-4xl font-bold">${state.users.reduce((s, u) => s + u.investments.length, 0)}</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow p-6">
+                            <h2 class="text-xl font-bold mb-4">Company Account</h2>
+                            <div class="flex gap-2">
+                                <input 
+                                    id="newAccount"
+                                    class="flex-1 px-4 py-2 border rounded-lg"
+                                    value="${state.formData.newAccount !== undefined ? state.formData.newAccount : state.companyAccount}"
+                                />
+                                <button onclick="updateCompanyAccount()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                                    Update
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow p-6">
+                            <h2 class="text-xl font-bold mb-4">Withdrawal Requests</h2>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr class="border-b">
+                                            <th class="text-left p-3">User</th>
+                                            <th class="text-left p-3">Contact</th>
+                                            <th class="text-left p-3">Amount</th>
+                                            <th class="text-left p-3">Account</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${state.withdrawals.map(w => `
+                                            <tr class="border-b hover:bg-gray-50">
+                                                <td class="p-3">${w.userName}</td>
+                                                <td class="p-3 text-sm">${w.userEmail}<br/>${w.userPhone}</td>
+                                                <td class="p-3 font-bold text-green-600">₦${w.amount.toLocaleString()}</td>
+                                                <td class="p-3">${w.account}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow p-6">
+                            <h2 class="text-xl font-bold mb-4">All Registered Users</h2>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr class="border-b">
+                                            <th class="text-left p-3">Name</th>
+                                            <th class="text-left p-3">Email</th>
+                                            <th class="text-left p-3">Phone</th>
+                                            <th class="text-left p-3">Balance</th>
+                                            <th class="text-left p-3">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${regularUsers.map(u => `
+                                            <tr class="border-b hover:bg-gray-50">
+                                                <td class="p-3">${u.name}</td>
+                                                <td class="p-3">${u.email}</td>
+                                                <td class="p-3">${u.phone}</td>
+                                                <td class="p-3 font-bold text-green-600">₦${u.balance.toLocaleString()}</td>
+                                                <td class="p-3">
+                                                    <button onclick="deleteUser('${u.id}')" class="text-red-600 hover:text-red-800 px-2 py-1">
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button 
-                  onClick={() => handleInvest(plan)}
-                  className={`w-full bg-gradient-to-r ${plan.color} text-white py-3 rounded-xl font-semibold`}
-                >
-                  Invest Now
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+            `;
+        }
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-6 text-white">
-            <h2 className="text-2xl font-bold mb-4">Withdraw Funds</h2>
-            <div className="space-y-4">
-              <input 
-                value={formData.withdrawAmount || ''}
-                onChange={(e) => setFormData({...formData, withdrawAmount: e.target.value})}
-                type="number"
-                className="w-full px-4 py-3 rounded-xl bg-white/20 text-white placeholder-white/70"
-                placeholder="Amount"
-              />
-              <input 
-                value={formData.withdrawAccount || ''}
-                onChange={(e) => setFormData({...formData, withdrawAccount: e.target.value})}
-                className="w-full px-4 py-3 rounded-xl bg-white/20 text-white placeholder-white/70"
-                placeholder="Account Number"
-              />
-              <button onClick={handleWithdraw} className="w-full bg-white text-green-600 py-3 rounded-xl font-bold">
-                Request Withdrawal
-              </button>
-            </div>
-          </div>
+        function renderUserDashboard() {
+            const hour = new Date().getHours();
+            const greet = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
+            const greeting = `${greet}, ${state.currentUser.name}!`;
 
-          <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-3xl p-6 text-white">
-            <h2 className="text-2xl font-bold mb-4">Referral Program</h2>
-            <div className="bg-white/20 p-6 rounded-2xl mb-4">
-              <p className="text-sm mb-2">Your Code:</p>
-              <p className="text-3xl font-bold">{currentUser.id}</p>
-              <p className="text-sm mt-2">Earn N1,200 per referral!</p>
-            </div>
-            <div className="space-y-3">
-              <div className="bg-white/20 p-4 rounded-xl flex justify-between">
-                <span>Total Referrals</span>
-                <span className="font-bold text-2xl">{currentUser.referrals}</span>
-              </div>
-              <div className="bg-white/20 p-4 rounded-xl flex justify-between">
-                <span>Earnings</span>
-                <span className="font-bold text-2xl">N{(currentUser.referrals * 1200).toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+            return `
+                <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+                    <nav class="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white p-4">
+                        <div class="max-w-7xl mx-auto flex justify-between items-center">
+                            <h1 class="text-xl md:text-2xl font-bold">💎 InvestAndEarnPro</h1>
+                            <button onclick="logout()" class="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-xl hover:bg-white/30">
+                                Logout
+                            </button>
+                        </div>
+                    </nav>
 
-export default InvestAndEarnPro;
+                    <div class="max-w-7xl mx-auto p-4 space-y-6">
+                        <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 rounded-3xl shadow-xl">
+                            <h2 class="text-3xl font-bold">${greeting}</h2>
+                            <p class="mt-2">Your financial freedom starts here 🚀</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-gradient-to-br from-green-400 to-emerald-600 text-white p-6 rounded-2xl shadow-xl">
+                                <p class="text-sm">Balance</p>
+                                <p class="text-3xl font-bold">₦${state.currentUser.balance.toLocaleString()}</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-blue-400 to-cyan-600 text-white p-6 rounded-2xl shadow-xl">
+                                <p class="text-sm">Investments</p>
+                                <p class="text-3xl font-bold">${state.currentUser.investments.length}</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-purple-400 to-pink-600 text-white p-6 rounded-2xl shadow-xl">
+                                <p class="text-sm">Referrals</p>
+                                <p class="text-3xl font-bold">${state.currentUser.referrals}</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-3xl shadow-xl p-6">
+                            <h2 class="text-2xl font-bold mb-6">Investment Plans</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                ${plans.map((plan, i) => `
+                                    <div class="border-2 rounded-2xl p-6 hover:shadow-xl transition">
+                                        <div class="bg-gradient-to-br ${plan.color} text-white rounded-xl p-4 mb-4 text-center">
+                                            <p class="text-3xl font-bold">₦${plan.amount.toLocaleString()}</p>
+                                        </div>
+                                        <div class="space-y-2 mb-4">
+                                            <p>Returns: <span class="font-bold text-green-600">₦${plan.return.toLocaleString()}</span></p>
+                                            <p>Duration: <span class="font-bold">${plan.days} days</span></p>
+                                            <p>ROI: <span class="font-bold text-purple-600">${((plan.return / plan.amount - 1) * 100).toFixed(0)}%</span></p>
+                                        </div>
+                                        <button 
+                                            onclick='handleInvest(${JSON.stringify(plan)})'
+                                            class="w-full bg-gradient-to-r ${plan.color} text-white py-3 rounded-xl font-semibold hover:opacity-90"
+                                        >
+                                            Invest Now
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-6 text-white shadow-xl">
+                                <h2 class="text-2xl font-bold mb-4">Withdraw Funds</h2>
+                                <div class="space-y-4">
+                                    <input 
+                                        id="withdrawAmount"
+                                        type="number"
+                                        class="w-full px-4 py-3 rounded-xl bg-white/20 text-white placeholder-white/70"
+                                        placeholder="Amount"
+                                        value="${state.formData.withdrawAmount || ''}"
+                                    />
+                                    <input 
+                                        id="withdrawAccount"
+                                        class="w-full px-4 py-3 rounded-xl bg-white/20 text-white placeholder-white/70"
+                                        placeholder="Account Number"
+                                        value="${state.formData.withdrawAccount || ''}"
+                                    />
+                                    <button onclick="handleWithdraw()" class="w-full bg-white text-green-600 py-3 rounded-xl font-bold hover:bg-green-50">
+                                        Request Withdrawal 💰
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="bg-gradient-to-br from-purple-500 to-pink-600 rounded-3xl p-6 text-white shadow-xl">
+                                <h2 class="text-2xl font-bold mb-4">Referral Program</h2>
+                                <div class="bg-white/20 p-6 rounded-2xl mb-4">
+                                    <p class="text-sm mb-2">Your Referral Code:</p>
+                                    <p class="text-3xl font-bold break-all">${state.currentUser.id}</p>
+                                    <p class="text-sm mt-2">💰 Earn ₦1,200 per referral!</p>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="bg-white/20 p-4 rounded-xl flex justify-between">
+                                        <span>Total Referrals</span>
+                                        <span class="font-bold text-2xl">${state.currentUser.referrals}</span>
+                                    </div>
+                                    <div class="bg-white/20 p-4 rounded-xl flex justify-between">
+                                        <span>Earnings</span>
+                                        <span class="font-bold text-2xl">₦${(state.currentUser.referrals * 1200).toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            
+            if (!state.currentUser) {
+                app.innerHTML = renderLoginPage();
+                attachLoginEventListeners();
+            } else if (state.currentUser.isAdmin) {
+                app.innerHTML = renderAdminDashboard();
+                attachAdminEventListeners();
+            } else {
+                app.innerHTML = renderUserDashboard();
+                attachUserEventListeners();
+            }
+        }
+
+        function attachLoginEventListeners() {
+            const loginEmail = document.getElementById('loginEmail');
+            const loginPassword = document.getElementById('loginPassword');
+            const regName = document.getElementById('regName');
+            const regEmail = document.getElementById('regEmail');
+            const regPhone = document.getElementById('regPhone');
+            const regPassword = document.getElementById('regPassword');
+            const referral = document.getElementById('referral');
+
+            if (loginEmail) loginEmail.addEventListener('input', (e) => state.formData.loginEmail = e.target.value);
+            if (loginPassword) loginPassword.addEventListener('input', (e) => state.formData.loginPassword = e.target.value);
+            if (regName) regName.addEventListener('input', (e) => state.formData.regName = e.target.value);
+            if (regEmail) regEmail.addEventListener('input', (e) => state.formData.regEmail = e.target.value);
+            if (regPhone) regPhone.addEventListener('input', (e) => state.formData.regPhone = e.target.value);
+            if (regPassword) regPassword.addEventListener('input', (e) => state.formData.regPassword = e.target.value);
+            if (referral) referral.addEventListener('input', (e) => state.formData.referral = e.target.value);
+        }
+
+        function attachAdminEventListeners() {
+            const newAccount = document.getElementById('newAccount');
+            if (newAccount) newAccount.addEventListener('input', (e) => state.formData.newAccount = e.target.value);
+        }
+
+        function attachUserEventListeners() {
+            const withdrawAmount = document.getElementById('withdrawAmount');
+            const withdrawAccount = document.getElementById('withdrawAccount');
+            
+            if (withdrawAmount) withdrawAmount.addEventListener('input', (e) => state.formData.withdrawAmount = e.target.value);
+            if (withdrawAccount) withdrawAccount.addEventListener('input', (e) => state.formData.withdrawAccount = e.target.value);
+        }
+
+        // Initial render
+        render();
+    </script>
+</body>
+</html>
